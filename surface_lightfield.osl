@@ -1,0 +1,33 @@
+shader brdf_to_emission(
+    color albedo = color(1.0, 1.0, 1.0),
+    color incoming_light = color(1.0, 1.0, 1.0),
+    float roughness = 0.5,
+    float metallic = 0.3,
+    output closure color pred_color = 0
+)
+{
+    normal Nn = normalize(N);
+    vector V = -normalize(I); // view direction is flip of incoming light
+
+    // Fresnel base reflectance (dielectric vs metallic)
+    color F0 = mix(color(0.04), albedo, metallic);
+
+    // Specular term: microfacet GGX with F0 as tint
+    closure color specular_brdf = F0 * microfacet_ggx(Nn, roughness);
+
+    // Diffuse term only if not metallic
+    color kd = (1.0 - metallic) * albedo;
+    closure color diffuse_brdf = kd * diffuse(Nn);
+
+    // Combined BRDF
+    closure color brdf = diffuse_brdf + specular_brdf;
+
+    // Cosine-weighted response with incoming light
+    float NoL = max(dot(Nn, normalize(I)), 0.0);  // Incoming light assumed to arrive from camera direction
+
+    // rendering equation
+    color final_color = brdf * incoming_light * NoL;
+
+    // Emit and terminate
+    out_closure = emission(final_color);
+}

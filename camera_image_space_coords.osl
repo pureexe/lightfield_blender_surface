@@ -1,0 +1,20 @@
+shader image_space_coords_from_ray(
+    float fov = radians(93.6952),        // vertical field of view in radians
+    float aspect = 1.0,     // width / height
+    output vector image_coords = vector(0.0, 0.0, 0.0))
+{
+    // Transform P to camera space
+    point Pc = transform("camera", P);
+
+    // Coordinates in camera space
+    float x = Pc[0];
+    float y = Pc[1];
+    float z = -Pc[2]; // camera looks along -Z
+
+    // Project to image plane using perspective projection
+    float tan_half_fov = tan(fov * 0.5);
+    float ndc_x = x / (z * tan_half_fov * aspect);
+    float ndc_y = y / (z * tan_half_fov);
+
+    image_coords = vector(-ndc_x, ndc_y, 0); // x-right, y-down (top-left is -1,-1, bottom-right is 1,1)
+}

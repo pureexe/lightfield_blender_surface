@@ -1,0 +1,8 @@
+// reflection_direction.osl - get reflection vector 
+
+shader incoming_direction(
+    output vector incoming_direction = vector(1.0, 0.0, 0.0)
+){
+    // prepare variable
+    incoming_direction = -normalize(I); // we flip because I is point from camera to surface but we need from surface to camera
+}

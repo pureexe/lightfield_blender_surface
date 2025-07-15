@@ -1,0 +1,37 @@
+shader brdf_emission_precomputed(
+    color albedo = color(1.0),
+    color incoming_light = color(1.0),
+    float roughness = 0.5,
+    float metallic = 0.0,
+    float IOR = 1.5,
+    output closure color pred_color = 0
+)
+{
+    // Compute Fresnel F0 from IOR
+    float fresnel_scalar = pow((IOR - 1.0) / (IOR + 1.0), 2.0);
+    color dielectric_f0 = color(fresnel_scalar);
+
+    // Mix Fresnel base reflectance based on metallic
+    color F0 = mix(dielectric_f0, albedo, metallic);
+
+    // Simplified specular term (as scalar)
+    float specular = pow(1.0 - roughness, 2.0); // roughness modulates specular strength
+    
+    // Diffuse strength
+    float kd = (1.0 - metallic);
+
+    // Combine approx BRDF color (just a guess)
+    color brdf_color = kd * albedo + specular * F0;
+
+    // Cosine term (light comes from reflection vector)
+    vector norm_I = normalize(I);
+    vector N_forward = faceforward(normalize(N), norm_I);
+    vector L = reflect(norm_I, N_forward);  // correct reflection dir
+    float NoL = max(dot(N_forward, L), 0.0);      // cosine term
+
+
+    // rendering equation
+    color final_color = brdf_color * incoming_light * NoL; 
+    
+    pred_color = final_color * emission(); // emission is stop light bouncing by telling the pixel is emit the color
+}

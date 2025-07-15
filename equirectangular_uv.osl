@@ -1,0 +1,32 @@
+// convert Unit vector in 3D space to equirectangular UV (range 0,1)
+
+
+shader equirectangular_uv(
+    vector direction = vector(1.0, 0.0, 0.0),
+    output vector uv_vector = vector(0.0, 0.0, 0.0)
+){
+    // Blender using x-to-viewer, y-right, z-up
+    // equirectangular use [-pi, pi] on horizontal and [pi/2, -pi/2] on vertical
+    
+    // normalize direction to unit vector if it is not 
+    vector normalize_direction = normalize(direction);
+    
+    // split variable 
+    float x = normalize_direction[0];
+    float y = normalize_direction[1];
+    float z = normalize_direction[2];
+
+    // u=phi=longtitude=horizontal
+    float u1 = atan2(y,x); // atan2 has range[-pi,pi]
+    float u2 = u1 / M_PI; // range[-1, 1]
+    float u3 = (u2 + 1.0) / 2.0; // range[0,1]
+
+    // v=theta=latitude=vertical
+    float v1 = atan2(z,sqrt(x*x + y*y)); //range[-pi/2, pi/2]
+    float v2 = v1 / M_PI; // range[-0.5,0.5]
+    float v3 = v2 + 0.5; //range[0,1]
+
+    // vector for return 
+    uv_vector = vector(u3, v3, 0.0);
+}
+ 

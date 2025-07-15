@@ -1,0 +1,56 @@
+shader atlas_env_shader_auto_selector(
+    string tex_name = "",
+    color albedo = color(1.0),
+    float roughness = 0.3,
+    float metallic = 0.5,
+    int num_width_envmap = 6,
+    int num_height_envmap = 4,
+    output closure color result = 0)
+{
+    normal Ns = normalize(N);
+    vector V = -normalize(I);
+    vector R = normalize(reflect(V, Ns));  // reflection direction
+
+    // Project world-space point P to camera-facing screen space
+    // We assume camera at origin, looking down -Z axis (Blender default)
+    vector cam_forward = vector(0, 0, -1);
+    vector cam_up = vector(0, 1, 0);
+    vector cam_right = vector(1, 0, 0);
+
+    vector to_point = normalize(P); // direction from origin to P
+    float x_proj = dot(to_point, cam_right);
+    float y_proj = dot(to_point, cam_up);
+
+    // Now x_proj and y_proj are screen-space coordinates in [-1, 1]
+    float sx = clamp(x_proj, -1.0, 1.0);
+    float sy = clamp(y_proj, -1.0, 1.0);
+
+    // Map to grid index
+    int grid_x = int(round(0.5 * (sx + 1.0) * (num_width_envmap - 1)));
+    int grid_y = int(round(0.5 * (sy + 1.0) * (num_height_envmap - 1)));
+
+    // Compute tile offset and scale
+    float tile_w = 1.0 / num_width_envmap;
+    float tile_h = 1.0 / num_height_envmap;
+
+    float offset_u = grid_x * tile_w;
+    float offset_v = grid_y * tile_h;
+
+    // Convert reflection direction R to equirectangular UV
+    float u = 0.5 + atan2(R[0], R[2]) / (2.0 * M_PI);
+    float v = 0.5 - asin(R[1]) / M_PI;
+
+    // Scale UV to selected tile
+    float tiled_u = offset_u + u * tile_w;
+    float tiled_v = offset_v + v * tile_h;
+
+    // Sample from environment atlas
+    color env_color = texture(tex_name, tiled_u, tiled_v);
+
+    // Final shading
+    color diffuse = albedo * env_color;
+    color specular = env_color * pow(max(dot(Ns, R), 0.0), 1.0 / max(roughness, 0.01));
+    color final = mix(diffuse, specular, metallic);
+
+    result = final * emission();
+}

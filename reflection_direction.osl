@@ -1,0 +1,16 @@
+// reflection_direction.osl - get reflection vector 
+
+shader reflect_direction(
+    output vector reflect_direction = vector(1.0, 0.0, 0.0)
+){
+    // prepare variable
+    vector norm_I = normalize(I);
+    vector N_forward = faceforward(normalize(N), norm_I);
+    reflect_direction = reflect(norm_I, N_forward);  // correct reflection dir
+}
+
+    /*
+    normal Ns = normalize(N);
+    vector V = -normalize(I);
+    reflect_direction = normalize(reflect(V, Ns));  // reflection direction
+    */

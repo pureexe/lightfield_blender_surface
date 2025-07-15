@@ -1,0 +1,12 @@
+
+// location_in_camera_space is for getting location in camera space (range -1,1) x-right y-up
+shader location_in_camera_space(
+    output vector camera_space_loc = P,
+){
+    vector cam_right = vector(1, 0, 0);
+    vector cam_up = vector(0, 1, 0);
+    vector to_point = normalize(P);
+    float sx = dot(to_point, cam_right);
+    float sy = dot(to_point, cam_up);
+    camera_space_loc = vector(sx, sy, 0);
+}

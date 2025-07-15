@@ -1,0 +1,38 @@
+// atlas_uv_mapper.osl is use for get the uv location of image texture 
+// Vector(0.0, 0.0, 0.0) -> bottom-left
+// Vector(1.0, 1.0, 0.0) -> top-right
+// atlas_uv_mapper
+
+shader atlas_uv_mapper(
+    int num_width_envmap = 64,
+    int num_height_envmap = 64,
+    point camera_space_loc = vector(0, 0, 0),  // range[-1,1] # top-left (-1,-1) bottom right (1,1)
+    vector equirectangular_uv = vector(0.5, 0.5, 0), //range[0,1]
+    output vector uv_location = vector(0.5, 0.5, 0) // range[0,1]
+){
+    // Convert R to equirectangular (u, v)
+    float u1 = equirectangular_uv[0];
+    float v1 = equirectangular_uv[1];
+
+    // Compute grid_x and grid_y where is the location from top-left to bottom-right
+    float sx = clamp(camera_space_loc[0], -1.0, 1.0); //clamp value to range[-1,1]
+    float sy = clamp(-camera_space_loc[1], -1.0, 1.0); // also flip to Y-up
+
+    int grid_x = int(round(0.5 * (sx + 1.0) * (num_width_envmap - 1)));
+    int grid_y = int(round(0.5 * (sy + 1.0) * (num_height_envmap - 1)));
+
+    // Compute tile size
+    float tile_w = 1.0 / num_width_envmap;
+    float tile_h = 1.0 / num_height_envmap;
+
+    float offset_u = grid_x * tile_w;
+    float offset_v = grid_y * tile_h;
+
+    uv_location = vector(offset_u + u1 * tile_w, offset_v + v1 * tile_h, 0);
+}
+
+/*
+// Convert R to equirectangular (u, v)
+//    float u = 0.5 + atan2(R[0], R[2]) / (2.0 * M_PI);
+//    float v = 0.5 - asin(R[1]) / M_PI;
+*/
